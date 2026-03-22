@@ -67,7 +67,7 @@ class QwenNovelSearcher:
                     {"role": "user", "content": prompt},
                 ],
                 #启用联网搜索
-                extra_body={"enable_thinking": True},
+                extra_body={"enable_search": True},
                 temperature=0.3,   # 降低随机性，提高准确性
                 max_tokens=2048,
             )
