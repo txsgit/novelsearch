@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>百度小说搜索器 - 小说阅读链接搜索</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #ffffff;
+            color: #1a1a1a;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2152ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 0.875rem;
+        }
+
+        /* Search Form */
+        .search-form {
+            margin-bottom: 2rem;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .search-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            height: 3rem;
+            padding: 0 1rem 0 2.75rem;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            border-color: #2152ff;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(33, 82, 255, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.875rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1.25rem;
+            height: 1.25rem;
+            color: #999;
+        }
+
+        .search-btn {
+            height: 3rem;
+            padding: 0 1.5rem;
+            background: #2152ff;
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .search-btn:hover:not(:disabled) {
+            background: #1a41cc;
+        }
+
+        .search-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            color: #999;
+        }
+
+        .spinner {
+            width: 2rem;
+            height: 2rem;
+            border: 2px solid #e0e0e0;
+            border-top-color: #2152ff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Results */
+        .results-section {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .novel-info {
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .novel-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .author {
+            color: #2152ff;
+            font-size: 0.9375rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .author-label {
+            color: #999;
+            font-weight: normal;
+        }
+
+        /* Links List */
+        .links-header {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #999;
+            margin-bottom: 1rem;
+        }
+
+        .link-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background: #fcfcfc;
+            border: 1px solid #f0f0f0;
+            border-radius: 0.75rem;
+            margin-bottom: 0.5rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .link-card:hover {
+            border-color: #2152ff;
+            background: #fff;
+            transform: translateX(4px);
+        }
+
+        .link-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .link-title {
+            font-size: 0.9375rem;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .link-badge {
+            font-size: 0.625rem;
+            font-weight: 600;
+            padding: 0.125rem 0.5rem;
+            background: #eef2ff;
+            color: #2152ff;
+            border-radius: 0.25rem;
+            text-transform: uppercase;
+        }
+
+        .link-url {
+            font-size: 0.6875rem;
+            color: #999;
+            font-family: monospace;
+            word-break: break-all;
+        }
+
+        .external-icon {
+            width: 1rem;
+            height: 1rem;
+            color: #ccc;
+            flex-shrink: 0;
+        }
+
+        .link-card:hover .external-icon {
+            color: #2152ff;
+        }
+
+        /* Load More Button */
+        .load-more {
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        .load-more-btn {
+            width: 100%;
+            padding: 1rem;
+            background: transparent;
+            border: 1px dashed #e0e0e0;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .load-more-btn:hover:not(:disabled) {
+            border-color: #2152ff;
+            color: #2152ff;
+            background: #f8f9ff;
+        }
+
+        .load-more-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* Error Message */
+        .error-message {
+            padding: 1rem;
+            background: #fef2f2;
+            border: 1px solid #fee2e2;
+            border-radius: 0.75rem;
+            color: #dc2626;
+            font-size: 0.875rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🔍 百度小说搜索器</h1>
+            <p>输入小说名称，获取百度搜索到的所有阅读链接</p>
+        </header>
+
+        <!-- Search Bar -->
+        <div class="search-form">
+            <div class="search-box">
+                <div class="search-input-wrapper">
+                    <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <input type="text" id="novelName" class="search-input" placeholder="输入小说名字..." autocomplete="off">
+                </div>
+                <button id="searchBtn" class="search-btn">百度一下</button>
+            </div>
+        </div>
+
+        <!-- Results Container -->
+        <div id="resultsContainer"></div>
+    </div>
+
+    <script>
+        // 状态管理
+        let state = {
+            novelName: '',
+            author: '',
+            results: [],
+            existingUris: new Set(),
+            loading: false,
+            loadingMore: false,
+            hasMore: true
+        };
+
+        // DOM 元素
+        const novelNameInput = document.getElementById('novelName');
+        const searchBtn = document.getElementById('searchBtn');
+        const resultsContainer = document.getElementById('resultsContainer');
+
+        // 工具函数
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 渲染加载状态
+        function renderLoading() {
+            return `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>正在为您在百度及全网搜索资源...</p>
+                </div>
+            `;
+        }
+
+        // 渲染结果
+        function renderResults() {
+            if (state.loading) {
+                resultsContainer.innerHTML = renderLoading();
+                return;
+            }
+
+            if (state.error) {
+                resultsContainer.innerHTML = `<div class="error-message">${escapeHtml(state.error)}</div>`;
+                return;
+            }
+
+            if (state.results.length === 0 && !state.author) {
+                resultsContainer.innerHTML = '';
+                return;
+            }
+
+            const linksHtml = state.results.map((result, index) => `
+                <a href="${escapeHtml(result.uri)}" target="_blank" rel="noopener noreferrer" class="link-card" style="animation: fadeIn 0.2s ease ${index * 0.02}s both">
+                    <div class="link-info">
+                        <div class="link-title">
+                            ${escapeHtml(result.title || '搜索结果')}
+                            ${result.source ? `<span class="link-badge">${escapeHtml(result.source)}</span>` : ''}
+                        </div>
+                        <div class="link-url">${escapeHtml(result.uri)}</div>
+                    </div>
+                    <svg class="external-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                    </svg>
+                </a>
+            `).join('');
+
+            const loadMoreHtml = state.hasMore ? `
+                <div class="load-more">
+                    <button id="loadMoreBtn" class="load-more-btn" ${state.loadingMore ? 'disabled' : ''}>
+                        ${state.loadingMore ? '正在加载更多资源...' : '查看更多结果'}
+                    </button>
+                </div>
+            ` : (state.results.length > 0 ? `<div class="load-more"><p style="color:#999; font-size:0.75rem;">没有更多结果了</p></div>` : '');
+
+            const html = `
+                <div class="results-section">
+                    <div class="novel-info">
+                        <div class="novel-name">${escapeHtml(state.novelName)}</div>
+                        ${state.author ? `<div class="author"><span class="author-label">作者:</span> ${escapeHtml(state.author)}</div>` : ''}
+                    </div>
+                    <div class="links-header">📄 搜索到的所有网址 (${state.results.length})</div>
+                    <div class="links-list">
+                        ${linksHtml || '<div class="empty-state">未找到相关网址</div>'}
+                    </div>
+                    ${loadMoreHtml}
+                </div>
+            `;
+
+            resultsContainer.innerHTML = html;
+
+            // 绑定加载更多按钮事件
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            if (loadMoreBtn) {
+                loadMoreBtn.addEventListener('click', loadMore);
+            }
+        }
+
+        // 执行搜索
+        async function performSearch(isLoadMore = false) {
+            const novelName = novelNameInput.value.trim();
+            if (!novelName) return;
+
+            if (isLoadMore) {
+                state.loadingMore = true;
+            } else {
+                state.loading = true;
+                state.results = [];
+                state.author = '';
+                state.existingUris.clear();
+                state.hasMore = true;
+                state.novelName = novelName;
+            }
+            state.error = null;
+            renderResults();
+
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        novel_name: novelName,
+                        is_load_more: isLoadMore,
+                        existing_uris: Array.from(state.existingUris),
+                        author: state.author
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || '搜索失败');
+                }
+
+                if (isLoadMore) {
+                    // 加载更多
+                    if (data.results && data.results.length > 0) {
+                        for (const result of data.results) {
+                            if (!state.existingUris.has(result.uri)) {
+                                state.existingUris.add(result.uri);
+                                state.results.push(result);
+                            }
+                        }
+                        state.hasMore = data.has_more !== false;
+                    } else {
+                        state.hasMore = false;
+                        if (data.message) {
+                            state.error = data.message;
+                        }
+                    }
+                } else {
+                    // 首次搜索
+                    state.novelName = data.novel_name || novelName;
+                    state.author = data.author || '';
+                    state.results = data.results || [];
+                    for (const uri of (data.existing_uris || [])) {
+                        state.existingUris.add(uri);
+                    }
+                    state.hasMore = true;
+                }
+            } catch (err) {
+                console.error('Search error:', err);
+                state.error = isLoadMore ? '加载更多时出错' : '搜索过程中出错，请稍后再试';
+            } finally {
+                state.loading = false;
+                state.loadingMore = false;
+                renderResults();
+            }
+        }
+
+        // 加载更多
+        async function loadMore() {
+            if (state.loadingMore || state.loading) return;
+            if (!state.hasMore) {
+                state.error = '没有更多结果了';
+                renderResults();
+                return;
+            }
+            await performSearch(true);
+        }
+
+        // 搜索按钮点击事件
+        searchBtn.addEventListener('click', () => performSearch(false));
+
+        // 回车搜索
+        novelNameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch(false);
+            }
+        });
+
+        // 初始渲染
+        renderResults();
+    </script>
+</body>
+</html>
